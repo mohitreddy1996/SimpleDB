@@ -1,5 +1,6 @@
 package simpledb;
 
+import java.awt.image.DataBufferByte;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -16,12 +17,18 @@ import java.util.*;
 
 public class Catalog {
 
+    private ArrayList<Integer> tableId;
+    private HashMap<String, DbFile> dbFileNameMap;
+    private HashMap<DbFile, String> dbFilePrimaryKeyMap;
     /**
      * Constructor.
      * Creates a new, empty catalog.
      */
     public Catalog() {
         // some code goes here
+        tableId = new ArrayList<>();
+        dbFileNameMap = new HashMap<>();
+        dbFilePrimaryKeyMap = new HashMap<>();
     }
 
     /**
@@ -35,6 +42,9 @@ public class Catalog {
      */
     public void addTable(DbFile file, String name, String pkeyField) {
         // some code goes here
+        tableId.add(file.getId());
+        dbFilePrimaryKeyMap.put(file, pkeyField);
+        dbFileNameMap.put(name, file);
     }
 
     public void addTable(DbFile file, String name) {
@@ -58,7 +68,11 @@ public class Catalog {
      */
     public int getTableId(String name) throws NoSuchElementException {
         // some code goes here
-        return 0;
+        if(!dbFileNameMap.containsKey(name)){
+            throw new NoSuchElementException("");
+        }
+
+        return dbFileNameMap.get(name).getId();
     }
 
     /**
@@ -68,8 +82,13 @@ public class Catalog {
      * @throws NoSuchElementException if the table doesn't exist
      */
     public TupleDesc getTupleDesc(int tableid) throws NoSuchElementException {
-        // some code goes here
-        return null;
+        for (DbFile dbFile: dbFilePrimaryKeyMap.keySet()
+             ) {
+            if(dbFile.getId() == tableid){
+                return dbFile.getTupleDesc();
+            }
+        }
+        throw new NoSuchElementException("");
     }
 
     /**
@@ -79,28 +98,45 @@ public class Catalog {
      *     function passed to addTable
      */
     public DbFile getDbFile(int tableid) throws NoSuchElementException {
-        // some code goes here
-        return null;
+        for (DbFile dbFile: dbFilePrimaryKeyMap.keySet()
+             ) {
+            if(dbFile.getId() == tableid){
+                return dbFile;
+            }
+        }
+        throw new NoSuchElementException("");
     }
 
     public String getPrimaryKey(int tableid) {
-        // some code goes here
+        for (DbFile dbFile: dbFilePrimaryKeyMap.keySet()){
+            if(dbFile.getId() == tableid){
+                return dbFilePrimaryKeyMap.get(dbFile);
+            }
+        }
         return null;
     }
 
     public Iterator<Integer> tableIdIterator() {
         // some code goes here
-        return null;
+        return tableId.iterator();
     }
 
     public String getTableName(int id) {
         // some code goes here
+        for (String tableName: dbFileNameMap.keySet()
+             ) {
+            if(dbFileNameMap.get(tableName).getId() == id){
+                return tableName;
+            }
+        }
         return null;
     }
     
     /** Delete all tables from the catalog */
     public void clear() {
         // some code goes here
+        dbFileNameMap.clear();
+        dbFilePrimaryKeyMap.clear();
     }
     
     /**
