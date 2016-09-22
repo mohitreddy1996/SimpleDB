@@ -1,5 +1,6 @@
 package simpledb;
 
+import java.math.BigInteger;
 import java.util.*;
 import java.io.*;
 
@@ -51,8 +52,10 @@ public class HeapPage implements Page {
         try{
             // allocate and read the actual records of this page
             tuples = new Tuple[numSlots];
-            for (int i=0; i<tuples.length; i++)
+            for (int i=0; i<tuples.length; i++){
                 tuples[i] = readNextTuple(dis,i);
+            }
+
         }catch(NoSuchElementException e){
             e.printStackTrace();
         }
@@ -66,7 +69,8 @@ public class HeapPage implements Page {
     */
     private int getNumTuples() {        
         // some code goes here
-        return 0;
+
+        return (int)Math.floor((BufferPool.PAGE_SIZE*8)/(td.getSize()*8+1));
 
     }
 
@@ -77,8 +81,7 @@ public class HeapPage implements Page {
     private int getHeaderSize() {        
         
         // some code goes here
-        return 0;
-                 
+        return (int) Math.ceil(this.numSlots/8.0);
     }
     
     /** Return a view of this page before it was modified
@@ -103,7 +106,7 @@ public class HeapPage implements Page {
      */
     public HeapPageId getId() {
     // some code goes here
-    throw new UnsupportedOperationException("implement this");
+        return this.pid;
     }
 
     /**
@@ -273,15 +276,31 @@ public class HeapPage implements Page {
      */
     public int getNumEmptySlots() {
         // some code goes here
-        return 0;
+        int numEmptySlots = 0;
+        for(int i=0; i<numSlots; i++){
+            if(!isSlotUsed(i)){
+                numEmptySlots++;
+            }
+        }
+        return numEmptySlots;
     }
 
     /**
      * Returns true if associated slot on this page is filled.
      */
-    public boolean isSlotUsed(int i) {
+    public boolean isSlotUsed(int i) throws IllegalArgumentException{
         // some code goes here
-        return false;
+        if(i<0 || i>numSlots){
+            throw new IllegalArgumentException("");
+        }
+        int byteNumber = i/8;
+        int byteDiff = i%8;
+        if (byteNumber>=header.length){
+            throw new IllegalArgumentException("Invalid whichByte");
+        }
+        byte[] byteArray = new byte[] {header[byteNumber]};
+        BigInteger intRepByte = new BigInteger(byteArray);
+        return intRepByte.testBit(byteDiff);
     }
 
     /**
@@ -298,7 +317,13 @@ public class HeapPage implements Page {
      */
     public Iterator<Tuple> iterator() {
         // some code goes here
-        return null;
+        ArrayList<Tuple> tempTuples = new ArrayList<>();
+        for (Tuple tuple : tuples) {
+            if (tuple != null) {
+                tempTuples.add(tuple);
+            }
+        }
+        return tempTuples.iterator();
     }
 
 }

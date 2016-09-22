@@ -20,6 +20,7 @@ public class BufferPool {
     constructor instead. */
     public static final int DEFAULT_PAGES = 50;
 
+    private int maxNumPages;
     /**
      * Creates a BufferPool that caches up to numPages pages.
      *
@@ -27,6 +28,7 @@ public class BufferPool {
      */
     public BufferPool(int numPages) {
         // some code goes here
+        this.maxNumPages = numPages;
     }
 
     /**
@@ -47,6 +49,7 @@ public class BufferPool {
     public  Page getPage(TransactionId tid, PageId pid, Permissions perm)
         throws TransactionAbortedException, DbException {
         // some code goes here
+        
         return null;
     }
 
