@@ -12,8 +12,6 @@ public class TupleDesc implements Serializable {
     /**
      * Own fields added for the TupleDesc
     **/
-    private ArrayList<Type> typeList;
-    private ArrayList<String> fieldNameList;
     private ArrayList<TDItem> tdItems;
 
 
@@ -70,14 +68,14 @@ public class TupleDesc implements Serializable {
     public TupleDesc(Type[] typeAr, String[] fieldAr) {
         // some code goes here
         this.tdItems = new ArrayList<>();
-        this.typeList = new ArrayList<>();
-        this.fieldNameList = new ArrayList<>();
         for(int i = 0; i<typeAr.length; i++) {
             TDItem tdItem = new TDItem(typeAr[i], fieldAr[i]);
             this.tdItems.add(tdItem);
-            this.typeList.add(typeAr[i]);
-            this.fieldNameList.add(fieldAr[i]);
         }
+    }
+
+    public TupleDesc(ArrayList<TDItem> tdItems){
+        this.tdItems = tdItems;
     }
 
     /**
@@ -102,8 +100,6 @@ public class TupleDesc implements Serializable {
      * @return
      */
     public TupleDesc(){
-        this.typeList = new ArrayList<>();
-        this.fieldNameList = new ArrayList<>();
         this.tdItems = new ArrayList<>();
     }
 
@@ -111,24 +107,9 @@ public class TupleDesc implements Serializable {
      * HELPER FUNCTIONS FOR TUPLEDESC.
      *
      */
-    public ArrayList<Type> getTypeList(){
-        return this.typeList;
-    }
-
-    public ArrayList<String> getFieldNameList(){
-        return this.fieldNameList;
-    }
 
     public ArrayList<TDItem> getTDItems(){
         return this.tdItems;
-    }
-
-    public void putTypeItem(Type type){
-        this.typeList.add(type);
-    }
-
-    public void putFieldName(String name){
-        this.fieldNameList.add(name);
     }
 
     public void putTDItem(TDItem tdItem){
