@@ -31,6 +31,14 @@ public class Catalog {
         dbFilePrimaryKeyMap = new HashMap<>();
     }
 
+    public HashMap<String, DbFile> getdbFileNameMap(){
+        return dbFileNameMap;
+    }
+
+    public HashMap<DbFile, String> filePrimaryKeyMap(){
+        return dbFilePrimaryKeyMap;
+    }
+
     /**
      * Add a new table to the catalog.
      * This table's contents are stored in the specified DbFile.

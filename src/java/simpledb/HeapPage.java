@@ -326,5 +326,11 @@ public class HeapPage implements Page {
         return tempTuples.iterator();
     }
 
+    public ArrayList<Tuple> getTuples(){
+        ArrayList<Tuple> tuplesArr = new ArrayList<>();
+        Collections.addAll(tuplesArr, tuples);
+        return tuplesArr;
+    }
+
 }
 

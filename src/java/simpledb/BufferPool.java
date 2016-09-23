@@ -1,6 +1,7 @@
 package simpledb;
 
 import java.io.*;
+import java.util.HashMap;
 
 /**
  * BufferPool manages the reading and writing of pages into memory from
@@ -21,6 +22,9 @@ public class BufferPool {
     public static final int DEFAULT_PAGES = 50;
 
     private int maxNumPages;
+    private static int numberEntries = 0;
+    private HashMap<PageId, Page> pageIdPageHashMap;
+    private HashMap<PageId, Integer> recentlyUsed;
     /**
      * Creates a BufferPool that caches up to numPages pages.
      *
@@ -29,6 +33,8 @@ public class BufferPool {
     public BufferPool(int numPages) {
         // some code goes here
         this.maxNumPages = numPages;
+        this.pageIdPageHashMap = new HashMap<>();
+        this.recentlyUsed = new HashMap<>();
     }
 
     /**
@@ -46,10 +52,27 @@ public class BufferPool {
      * @param pid the ID of the requested page
      * @param perm the requested permissions on the page
      */
-    public  Page getPage(TransactionId tid, PageId pid, Permissions perm)
+    public Page getPage(TransactionId tid, PageId pid, Permissions perm)
         throws TransactionAbortedException, DbException {
         // some code goes here
-        
+        if(this.pageIdPageHashMap.containsKey(pid)){
+            return this.pageIdPageHashMap.get(pid);
+        }else{
+            if(numberEntries >= maxNumPages){
+                throw new DbException("");
+            }else{
+                HashMap<String, DbFile> fileNameFileMap = Database.getCatalog().getdbFileNameMap();
+                HashMap<DbFile, String> filePrimaryKeyMap = Database.getCatalog().filePrimaryKeyMap();
+                for(DbFile dbFile : filePrimaryKeyMap.keySet()){
+                    if(dbFile.getId() == pid.getTableId()){
+                        Page page = dbFile.readPage(pid);
+                        this.pageIdPageHashMap.put(pid, page);
+                        numberEntries++;
+                        return page;
+                    }
+                }
+            }
+        }
         return null;
     }
 

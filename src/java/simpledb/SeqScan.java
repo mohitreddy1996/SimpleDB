@@ -1,5 +1,6 @@
 package simpledb;
 
+import java.awt.dnd.DnDConstants;
 import java.util.*;
 
 /**
@@ -10,7 +11,9 @@ import java.util.*;
 public class SeqScan implements DbIterator {
 
     private static final long serialVersionUID = 1L;
-
+    private TransactionId tid;
+    private int tableId;
+    private String tableAlias;
     /**
      * Creates a sequential scan over the specified table as a part of the
      * specified transaction.
@@ -29,6 +32,9 @@ public class SeqScan implements DbIterator {
      */
     public SeqScan(TransactionId tid, int tableid, String tableAlias) {
         // some code goes here
+        this.tid = tid;
+        this.tableId = tableid;
+        this.tableAlias = tableAlias;
     }
 
     /**
@@ -37,6 +43,17 @@ public class SeqScan implements DbIterator {
      *       be the actual name of the table in the catalog of the database
      * */
     public String getTableName() {
+        HashMap<DbFile, String > dbFileMap = Database.getCatalog().filePrimaryKeyMap();
+        HashMap<String, DbFile> dbNameFileMap = Database.getCatalog().getdbFileNameMap();
+        for(DbFile dbFile: dbFileMap.keySet()){
+            if(dbFile.getId() == this.tableId){
+                for(String dbName : dbNameFileMap.keySet()){
+                    if(dbNameFileMap.get(dbName) == dbFile){
+                        return dbName;
+                    }
+                }
+            }
+        }
         return null;
     }
     
@@ -46,7 +63,7 @@ public class SeqScan implements DbIterator {
     public String getAlias()
     {
         // some code goes here
-        return null;
+        return tableAlias;
     }
 
     /**

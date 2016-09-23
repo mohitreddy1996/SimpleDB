@@ -1,6 +1,7 @@
 package simpledb;
 
 import java.io.*;
+import java.lang.reflect.Array;
 import java.security.spec.ECField;
 import java.util.*;
 
@@ -18,6 +19,7 @@ public class HeapFile implements DbFile {
 
     private File file;
     private TupleDesc td;
+    private TransactionId tid;
     /**
      * Constructs a heap file backed by the specified file.
      * 
@@ -120,8 +122,7 @@ public class HeapFile implements DbFile {
     // see DbFile.java for javadocs
     public DbFileIterator iterator(TransactionId tid) {
         // some code goes here
-
-        return null;
+        return new HeapFileReaderIterator(tid, this);
     }
 
 }
