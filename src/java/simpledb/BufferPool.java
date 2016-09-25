@@ -57,20 +57,22 @@ public class BufferPool {
         throws TransactionAbortedException, DbException {
         // some code goes here
         if(this.pageIdPageHashMap.containsKey(pid)){
+            updateRecentlyUsed();
+            recentlyUsed.put(pid, 0);
             return this.pageIdPageHashMap.get(pid);
         }else{
-            if(numberEntries >= maxNumPages){
-                throw new DbException("");
-            }else{
-                HashMap<String, DbFile> fileNameFileMap = Database.getCatalog().getdbFileNameMap();
-                HashMap<DbFile, String> filePrimaryKeyMap = Database.getCatalog().filePrimaryKeyMap();
-                for(DbFile dbFile : filePrimaryKeyMap.keySet()){
-                    if(dbFile.getId() == pid.getTableId()){
-                        Page page = dbFile.readPage(pid);
-                        this.pageIdPageHashMap.put(pid, page);
-                        numberEntries++;
-                        return page;
+
+            HashMap<DbFile, String> filePrimaryKeyMap = Database.getCatalog().filePrimaryKeyMap();
+            for(DbFile dbFile : filePrimaryKeyMap.keySet()){
+                if(dbFile.getId() == pid.getTableId()){
+                    Page page = dbFile.readPage(pid);
+                    if(pageIdPageHashMap.size() >= maxNumPages){
+                        evictPage();
                     }
+                    this.pageIdPageHashMap.put(pid, page);
+                    updateRecentlyUsed();
+                    recentlyUsed.put(pid, 0);
+                    return page;
                 }
             }
         }
@@ -184,6 +186,9 @@ public class BufferPool {
     public synchronized void flushAllPages() throws IOException {
         // some code goes here
         // not necessary for proj1
+        for (PageId key : pageIdPageHashMap.keySet()) {
+            flushPage(key);
+        }
 
     }
 
@@ -204,6 +209,10 @@ public class BufferPool {
     private synchronized  void flushPage(PageId pid) throws IOException {
         // some code goes here
         // not necessary for proj1
+        int tableId = pid.getTableId();
+        HeapFile heapFile = (HeapFile) Database.getCatalog().getDbFile(tableId);
+        heapFile.writePage(pageIdPageHashMap.get(pid));
+        pageIdPageHashMap.get(pid).markDirty(false, null);
     }
 
     /** Write all pages of the specified transaction to disk.
@@ -220,6 +229,34 @@ public class BufferPool {
     private synchronized  void evictPage() throws DbException {
         // some code goes here
         // not necessary for proj1
+
+        int value = -1;
+        PageId pageIdToBeRemoved = null;
+        for (PageId pageId : recentlyUsed.keySet()) {
+            int tempValue = recentlyUsed.get(pageId);
+            if (tempValue > value) {
+                value = tempValue;
+                pageIdToBeRemoved = pageId;
+            }
+        }
+        try {
+            flushPage(pageIdToBeRemoved);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        recentlyUsed.remove(pageIdToBeRemoved);
+        pageIdPageHashMap.remove(pageIdToBeRemoved);
+
+    }
+
+    private void updateRecentlyUsed(){
+        if(!recentlyUsed.isEmpty()) {
+            for (PageId pageId : recentlyUsed.keySet()) {
+                int value = recentlyUsed.get(pageId);
+                value++;
+                recentlyUsed.put(pageId, value);
+            }
+        }
     }
 
 }
