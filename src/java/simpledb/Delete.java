@@ -7,6 +7,10 @@ package simpledb;
 public class Delete extends Operator {
 
     private static final long serialVersionUID = 1L;
+    private TransactionId tid;
+    private DbIterator child;
+    private TupleDesc tupleDesc;
+    private boolean done = false;
 
     /**
      * Constructor specifying the transaction that this delete belongs to as
@@ -19,23 +23,35 @@ public class Delete extends Operator {
      */
     public Delete(TransactionId t, DbIterator child) {
         // some code goes here
+        this.tid = t;
+        this.child = child;
+        Type[] typeArr = new Type[1];
+        String[] stringArr = new String[1];
+        typeArr[0] = Type.INT_TYPE;
+        stringArr[0] = "";
+        tupleDesc = new TupleDesc(typeArr, stringArr);
     }
 
     public TupleDesc getTupleDesc() {
         // some code goes here
-        return null;
+        return tupleDesc;
     }
 
     public void open() throws DbException, TransactionAbortedException {
         // some code goes here
+        child.open();
+        super.open();
     }
 
     public void close() {
         // some code goes here
+        super.close();
+        child.close();
     }
 
     public void rewind() throws DbException, TransactionAbortedException {
         // some code goes here
+        child.rewind();
     }
 
     /**
@@ -49,18 +65,43 @@ public class Delete extends Operator {
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
         // some code goes here
+        Tuple tuple = new Tuple(tupleDesc);
+        try {
+            int count = 0;
+            if(done){
+                return null;
+            }else{
+                try{
+                    done = true;
+                    while (child.hasNext()) {
+                        Tuple tuple2 = child.next();
+                        Database.getBufferPool().deleteTuple(tid, tuple2);
+                        count++;
+                    }
+                    tuple.setField(0, new IntField(count));
+                    return tuple;
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+            }
+        } catch (Exception e){
+            e.printStackTrace();
+        }
         return null;
     }
 
     @Override
     public DbIterator[] getChildren() {
         // some code goes here
-        return null;
+        return new DbIterator[]{child};
     }
 
     @Override
     public void setChildren(DbIterator[] children) {
         // some code goes here
+        if(children[0] != child){
+            child = children[0];
+        }
     }
 
 }
