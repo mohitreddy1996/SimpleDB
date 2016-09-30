@@ -4,6 +4,12 @@ package simpledb;
  */
 public class IntHistogram {
 
+
+    private int buckets;
+    private int minVal, maxVal;
+    private int numTups = 0;
+    private int[] numElems;
+    private int width;
     /**
      * Create a new IntHistogram.
      * 
@@ -22,6 +28,16 @@ public class IntHistogram {
      */
     public IntHistogram(int buckets, int min, int max) {
     	// some code goes here
+        this.buckets = buckets;
+        this.maxVal = max;
+        this.minVal = min;
+
+        numElems = new int[buckets];
+        for(int i = 0; i<buckets; i++){
+            numElems[i] = 0;
+        }
+        width = (int) Math.ceil(1.0*(max - min + 1)/buckets);
+
     }
 
     /**
@@ -30,6 +46,15 @@ public class IntHistogram {
      */
     public void addValue(int v) {
     	// some code goes here
+        if(v < minVal){
+            numElems[0]++;
+        }else if(v > maxVal){
+            numElems[buckets - 1]++;
+        }else{
+            int buckt = (v - minVal)/width;
+            numElems[buckt]++;
+        }
+        numTups++;
     }
 
     /**
@@ -44,7 +69,86 @@ public class IntHistogram {
      */
     public double estimateSelectivity(Predicate.Op op, int v) {
 
+        int bucketInd = (v-minVal)/width;
+
+        int left = bucketInd*width + minVal;
+        int right = bucketInd*width + minVal + width - 1;
     	// some code goes here
+        if (op == Predicate.Op.EQUALS){
+            if(v<minVal || v>maxVal){
+                return 0.0;
+            }else{
+                int height = numElems[bucketInd];
+                return (1.0*height/width)/numTups;
+            }
+        }else if(op == Predicate.Op.NOT_EQUALS){
+            if(v<minVal || v>maxVal){
+                return 1.0;
+            }else{
+                int height = numElems[bucketInd];
+                return 1.0 - (1.0*height/width)/numTups;
+            }
+        }else if(op == Predicate.Op.LESS_THAN){
+            if(v <= minVal){
+                return 0.0;
+            }else if(v > maxVal){
+                return 1.0;
+            }else{
+                double ans = 0.0;
+                int height = numElems[bucketInd];
+                ans = (1.0*height/numTups) * ((v - left)/width);
+                for(int hist = bucketInd - 1; hist >= 0; hist--){
+                    ans += ((1.0*numElems[hist]/numTups));
+                }
+
+                return ans;
+            }
+        }else if(op == Predicate.Op.GREATER_THAN){
+            if( v < minVal){
+                return 1.0;
+            }else if( v> maxVal - 1){
+                return 0.0;
+            }else{
+                double ans = 0.0;
+                int height = numElems[bucketInd];
+                ans = (height/numTups) *((right - v)/width);
+                for(int hist = bucketInd + 1; hist<buckets; hist++){
+                    ans += (1.0*numElems[hist]/numTups);
+                }
+
+                return ans;
+            }
+        }else if(op == Predicate.Op.LESS_THAN_OR_EQ){
+            if(v <= minVal){
+                return 0.0;
+            }else if(v > maxVal){
+                return 1.0;
+            }else{
+                double ans = 0.0;
+                int height = numElems[bucketInd];
+                ans = (1.0*height/numTups) * (1.0*(v - left)/width);
+                for(int hist = bucketInd - 1; hist >= 0; hist--){
+                    ans += ((1.0*numElems[hist]/numTups));
+                }
+                ans += (1.0*height/width)/numTups;
+                return ans;
+            }
+        }else if(op == Predicate.Op.GREATER_THAN_OR_EQ){
+            if( v < minVal){
+                return 1.0;
+            }else if( v> maxVal - 1){
+                return 0.0;
+            }else{
+                double ans = 0.0;
+                int height = numElems[bucketInd];
+                ans = (1.0*height/numTups) *(1.0*(right - v)/width);
+                for(int hist = bucketInd + 1; hist<buckets; hist++){
+                    ans += (1.0*numElems[hist]/numTups);
+                }
+                ans += (1.0*height/width)/numTups;
+                return ans;
+            }
+        }
         return -1.0;
     }
     
