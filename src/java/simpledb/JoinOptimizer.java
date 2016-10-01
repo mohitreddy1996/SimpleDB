@@ -4,6 +4,7 @@ import java.util.*;
 
 import javax.swing.*;
 import javax.swing.tree.*;
+import javax.xml.ws.handler.LogicalHandler;
 
 /**
  * The JoinOptimizer class is responsible for ordering a series of joins
@@ -228,13 +229,40 @@ public class JoinOptimizer {
             HashMap<String, TableStats> stats,
             HashMap<String, Double> filterSelectivities, boolean explain)
             throws ParsingException {
-
         // See the project writeup for some hints as to how this function
         // should work.
 
         // some code goes here
         //Replace the following
-        return joins;
+        PlanCache optJoin = new PlanCache();
+        Set<LogicalJoinNode> setNode = new HashSet<>();
+        setNode.addAll(joins);
+        Set<Set<LogicalJoinNode>> j = enumerateSubsets(joins, 1);
+        int size = j.size();
+        for(int i=1; i<=size; i++){
+
+            Set<Set<LogicalJoinNode>> lenSubsetOfJ = enumerateSubsets(joins, i);
+            for(Set<LogicalJoinNode> s : lenSubsetOfJ){
+                Double bestCostSoFar = Double.MAX_VALUE;
+                Integer bestCardSoFar = Integer.MAX_VALUE;
+                Vector<LogicalJoinNode> bestPlanSoFar = null;
+
+                for(LogicalJoinNode ljn : s){
+                    CostCard costCard = computeCostAndCardOfSubplan(stats, filterSelectivities, ljn, s, bestCostSoFar, optJoin);
+                    if(costCard!=null && costCard.cost < bestCostSoFar){
+                        bestCostSoFar = costCard.cost;
+                        bestCardSoFar = costCard.card;
+                        bestPlanSoFar = costCard.plan;
+
+                    }
+                }
+
+                optJoin.addPlan(s, bestCostSoFar, bestCardSoFar, bestPlanSoFar);
+            }
+
+        }
+
+        return optJoin.getOrder(setNode);
     }
 
     // ===================== Private Methods =================================
