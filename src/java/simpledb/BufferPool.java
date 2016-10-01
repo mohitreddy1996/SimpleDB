@@ -3,6 +3,8 @@ package simpledb;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * BufferPool manages the reading and writing of pages into memory from
@@ -26,6 +28,8 @@ public class BufferPool {
     private static int numberEntries = 0;
     private HashMap<PageId, Page> pageIdPageHashMap;
     private HashMap<PageId, Integer> recentlyUsed;
+    private LockManager lockManager;
+    HashMap<TransactionId, Long> allTransactions;
     /**
      * Creates a BufferPool that caches up to numPages pages.
      *
@@ -36,6 +40,8 @@ public class BufferPool {
         this.maxNumPages = numPages;
         this.pageIdPageHashMap = new HashMap<>();
         this.recentlyUsed = new HashMap<>();
+        lockManager = new LockManager();
+        allTransactions = new HashMap<>();
     }
 
     /**
@@ -55,6 +61,40 @@ public class BufferPool {
      */
     public Page getPage(TransactionId tid, PageId pid, Permissions perm)
         throws TransactionAbortedException, DbException {
+
+        if(!allTransactions.containsKey(tid)){
+            allTransactions.put(tid, System.currentTimeMillis());
+            boolean granted = lockManager.grantLock(tid, pid, perm);
+            while (granted){
+                if(System.currentTimeMillis() - allTransactions.get(tid) > 250){
+                    throw  new TransactionAbortedException();
+                }
+
+                try{
+                    Thread.sleep(200);
+                    granted = lockManager.grantLock(tid, pid, perm);
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+            }
+
+        }else{
+            boolean granted = lockManager.grantLock(tid, pid, perm);
+            while (granted){
+                if(System.currentTimeMillis() - allTransactions.get(tid) > 500){
+                    throw new TransactionAbortedException();
+                }
+
+                try{
+                    Thread.sleep(10);
+                    granted = lockManager.grantLock(tid, pid, perm);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+
         // some code goes here
         if(this.pageIdPageHashMap.containsKey(pid)){
             updateRecentlyUsed();
@@ -91,6 +131,7 @@ public class BufferPool {
     public  void releasePage(TransactionId tid, PageId pid) {
         // some code goes here
         // not necessary for proj1
+        lockManager.releaseLock(tid, pid);
     }
 
     /**
@@ -101,13 +142,14 @@ public class BufferPool {
     public void transactionComplete(TransactionId tid) throws IOException {
         // some code goes here
         // not necessary for proj1
+        transactionComplete(tid, true);
     }
 
     /** Return true if the specified transaction has a lock on the specified page */
     public boolean holdsLock(TransactionId tid, PageId p) {
         // some code goes here
         // not necessary for proj1
-        return false;
+        return lockManager.holdsLock(tid, p);
     }
 
     /**
@@ -121,6 +163,26 @@ public class BufferPool {
         throws IOException {
         // some code goes here
         // not necessary for proj1
+        allTransactions.remove(tid);
+        if(!commit){
+            for(Page page : pageIdPageHashMap.values()){
+                if(page.isDirty() == null && page.isDirty() == tid){
+                    pageIdPageHashMap.put(page.getId(), page.getBeforeImage());
+                }
+            }
+        }else{
+            for(Page page : pageIdPageHashMap.values()){
+                if(page.isDirty() != null && page.isDirty() == tid) {
+                    flushPage(page.getId());
+                    page.getBeforeImage();
+                }
+
+                if(page.isDirty() == null){
+                    page.getBeforeImage();
+                }
+            }
+        }
+        lockManager.releaseAllLocks(tid);
     }
 
     /**
@@ -200,6 +262,7 @@ public class BufferPool {
     public synchronized void discardPage(PageId pid) {
         // some code goes here
 	// not necessary for proj1
+        pageIdPageHashMap.remove(pid);
     }
 
     /**
@@ -220,6 +283,11 @@ public class BufferPool {
     public synchronized  void flushPages(TransactionId tid) throws IOException {
         // some code goes here
         // not necessary for proj1
+        for(Page page : pageIdPageHashMap.values()){
+            if(page.isDirty() != null && page.isDirty() == tid){
+                flushPage(page.getId());
+            }
+        }
     }
 
     /**
