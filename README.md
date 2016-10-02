@@ -1,6 +1,5 @@
 # SimpleDB
-Basic database management system. <br />
-Data managed in the formed of heap files. Each page divided into slots and each slots containing a page/record with a header.
+Basic database management system. Data managed in the formed of heap files. Each page divided into slots and each slots containing a page/record with a header.
 
 Features implemented :<br />
 1) Tuple Insertion, deletion with proper checks on tuple descriptions etc.<br />
