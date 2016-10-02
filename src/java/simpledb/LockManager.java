@@ -29,19 +29,19 @@ public class LockManager {
         Set<PageId> shardPages = sharedPages.get(tid);
         Set<PageId> excluPages = exclusivePages.get(tid);
 
-        if(tids.contains(tid)){
+        if(tids != null && tids.contains(tid)){
             tids.remove(tid);
             readOnly.put(pageId, tids);
         }
 
         writeOnly.remove(pageId);
 
-        if(shardPages.contains(pageId)){
+        if(shardPages!=null && shardPages.contains(pageId)){
             shardPages.remove(pageId);
             sharedPages.put(tid, shardPages);
         }
 
-        if(excluPages.contains(pageId)){
+        if(excluPages!=null && excluPages.contains(pageId)){
             excluPages.remove(pageId);
             exclusivePages.put(tid, excluPages);
         }
@@ -94,7 +94,7 @@ public class LockManager {
 
             if(transactionIds != null && transactionIds.size() > 1){
                 return true;
-            }else if(transactionIds != null && transactionIds.size() == 1 && transactionId != tid){
+            }else if(transactionIds != null && transactionIds.size() == 1 && !transactionIds.contains(tid)){
                 return true;
             }else if(transactionId != null && transactionId != tid){
                 return true;

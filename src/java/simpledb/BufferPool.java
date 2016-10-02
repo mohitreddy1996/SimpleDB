@@ -28,7 +28,7 @@ public class BufferPool {
     private static int numberEntries = 0;
     private HashMap<PageId, Page> pageIdPageHashMap;
     private HashMap<PageId, Integer> recentlyUsed;
-    private LockManager lockManager;
+    private volatile LockManager lockManager;
     HashMap<TransactionId, Long> allTransactions;
     /**
      * Creates a BufferPool that caches up to numPages pages.
@@ -67,11 +67,11 @@ public class BufferPool {
             boolean granted = lockManager.grantLock(tid, pid, perm);
             while (granted){
                 if(System.currentTimeMillis() - allTransactions.get(tid) > 250){
-                    throw  new TransactionAbortedException();
+                    //throw  new TransactionAbortedException();
                 }
 
                 try{
-                    Thread.sleep(200);
+                    Thread.sleep(250);
                     granted = lockManager.grantLock(tid, pid, perm);
                 }catch (Exception e){
                     e.printStackTrace();
@@ -82,11 +82,11 @@ public class BufferPool {
             boolean granted = lockManager.grantLock(tid, pid, perm);
             while (granted){
                 if(System.currentTimeMillis() - allTransactions.get(tid) > 500){
-                    throw new TransactionAbortedException();
+                    //throw new TransactionAbortedException();
                 }
 
                 try{
-                    Thread.sleep(10);
+                    Thread.sleep(500);
                     granted = lockManager.grantLock(tid, pid, perm);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
