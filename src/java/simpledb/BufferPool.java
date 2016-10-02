@@ -297,6 +297,17 @@ public class BufferPool {
     private synchronized  void evictPage() throws DbException {
         // some code goes here
         // not necessary for proj1
+        int numDirtyPages = 0;
+        for(PageId pageId : pageIdPageHashMap.keySet()){
+            HeapPage heapPage= (HeapPage) pageIdPageHashMap.get(pageId);
+            if(heapPage.isDirty() != null){
+                numDirtyPages++;
+            }
+        }
+
+        if(numDirtyPages == numberEntries){
+            throw new DbException("");
+        }
 
         int value = -1;
         PageId pageIdToBeRemoved = null;
@@ -305,15 +316,20 @@ public class BufferPool {
             if (tempValue > value) {
                 value = tempValue;
                 pageIdToBeRemoved = pageId;
+                if (pageIdPageHashMap.get(pageId).isDirty() == null) {
+                    try {
+                        flushPage(pageIdToBeRemoved);
+                        recentlyUsed.remove(pageIdToBeRemoved);
+                        pageIdPageHashMap.remove(pageIdToBeRemoved);
+                        break;
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         }
-        try {
-            flushPage(pageIdToBeRemoved);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        recentlyUsed.remove(pageIdToBeRemoved);
-        pageIdPageHashMap.remove(pageIdToBeRemoved);
+
+
 
     }
 
