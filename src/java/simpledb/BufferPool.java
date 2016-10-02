@@ -67,11 +67,11 @@ public class BufferPool {
             boolean granted = lockManager.grantLock(tid, pid, perm);
             while (granted){
                 if(System.currentTimeMillis() - allTransactions.get(tid) > 250){
-                    //throw  new TransactionAbortedException();
+                    throw  new TransactionAbortedException();
                 }
 
                 try{
-                    Thread.sleep(250);
+                    Thread.sleep(200);
                     granted = lockManager.grantLock(tid, pid, perm);
                 }catch (Exception e){
                     e.printStackTrace();
@@ -82,11 +82,11 @@ public class BufferPool {
             boolean granted = lockManager.grantLock(tid, pid, perm);
             while (granted){
                 if(System.currentTimeMillis() - allTransactions.get(tid) > 500){
-                    //throw new TransactionAbortedException();
+                    throw new TransactionAbortedException();
                 }
 
                 try{
-                    Thread.sleep(500);
+                    Thread.sleep(10);
                     granted = lockManager.grantLock(tid, pid, perm);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -163,10 +163,12 @@ public class BufferPool {
         throws IOException {
         // some code goes here
         // not necessary for proj1
+        // commit or Abort. commit : remove all dirty pages and revert back to the original page.
+        // abort : revert back.  Both the cases just remove all the locks for that transaction.
         allTransactions.remove(tid);
         if(!commit){
             for(Page page : pageIdPageHashMap.values()){
-                if(page.isDirty() == null && page.isDirty() == tid){
+                if(page.isDirty() != null && page.isDirty() == tid){
                     pageIdPageHashMap.put(page.getId(), page.getBeforeImage());
                 }
             }
@@ -305,7 +307,7 @@ public class BufferPool {
             }
         }
 
-        if(numDirtyPages == numberEntries){
+        if(numDirtyPages == maxNumPages){
             throw new DbException("");
         }
 
